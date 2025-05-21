@@ -5,7 +5,6 @@ local Data = {}
 local Profiles = {}
 local Replicas = {}
 
-local FormatNumber = require(ReplicatedStorage.Packages.FormatNumber)
 local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
 local Template = {
 	Money = 0,
@@ -13,6 +12,11 @@ local Template = {
 }
 
 local PlayerStore = ProfileStore.New("1", Template)
+
+local InDev = true
+if InDev then
+	PlayerStore = PlayerStore.Mock
+end
 
 local Promise = require(ReplicatedStorage.Packages.Promise)
 local ReplicaServer = require(ReplicatedStorage.Packages.Replica)
