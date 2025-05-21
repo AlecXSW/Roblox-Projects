@@ -8,6 +8,8 @@ local playergui = player.PlayerGui
 local HUD = playergui:WaitForChild("HUD")
 local MoneyLabel = HUD:WaitForChild("MoneyAmount")
 
+local Format = require(ReplicatedStorage.Packages.FormatNumber)
+
 local function AnimateText(old_value: number, new_value: number)
 	local currentNum = old_value
 
@@ -17,7 +19,7 @@ local function AnimateText(old_value: number, new_value: number)
 			break
 		end
 		currentNum = math.lerp(currentNum, new_value, dt * 20)
-		MoneyLabel.Text = `${math.round(currentNum)}`
+		MoneyLabel.Text = `${Format.Simple.Format(math.round(currentNum))}`
 	end
 
 	MoneyLabel.Text = `${new_value}`

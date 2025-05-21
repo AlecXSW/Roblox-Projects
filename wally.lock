@@ -15,7 +15,12 @@ dependencies = []
 [[package]]
 name = "green/roblox-projects"
 version = "0.1.0"
-dependencies = [["Promise", "evaera/promise@4.0.0"], ["Replica", "aykut92/replica@0.1.7"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
+dependencies = [["FormatNumber", "kumarion/formatnumber@0.0.1"], ["Promise", "evaera/promise@4.0.0"], ["Replica", "aykut92/replica@0.1.7"], ["ProfileStore", "lm-loleris/profilestore@1.0.3"]]
+
+[[package]]
+name = "kumarion/formatnumber"
+version = "0.0.1"
+dependencies = []
 
 [[package]]
 name = "lm-loleris/profilestore"

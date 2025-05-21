@@ -5,11 +5,13 @@ local Data = {}
 local Profiles = {}
 local Replicas = {}
 
+local FormatNumber = require(ReplicatedStorage.Packages.FormatNumber)
 local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
 local Template = {
-	Money = 5,
-	Inventory = {},
+	Money = 0,
+	Inventory = { 1, 2, 3, 4, 5, 6, 7, 8, 9 },
 }
+
 local PlayerStore = ProfileStore.New("1", Template)
 
 local Promise = require(ReplicatedStorage.Packages.Promise)
@@ -41,6 +43,15 @@ local function PlayerAdded(player: Player)
 			})
 			player_replica:Replicate()
 			Replicas[player] = player_replica
+
+			local leaderstats = Instance.new("Folder")
+			leaderstats.Name = "leaderstats"
+			leaderstats.Parent = player
+
+			local Money = Instance.new("NumberValue")
+			Money.Name = "Money"
+			Money.Parent = leaderstats
+			Money.Value = profile.Data.Money
 		else
 			profile:EndSession()
 		end

@@ -7,7 +7,7 @@ Players.PlayerAdded:Connect(function(player)
 		task.wait(0.01)
 		Data.GetReplica(player):andThen(function(replica)
 			replica:Set({ "Money" }, replica.Data.Money + 2_000_000_000)
-			print(replica.Data.Money)
+			player.leaderstats.Money.Value = replica.Data.Money
 		end)
 	end
 end)
