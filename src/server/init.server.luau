@@ -1,13 +1,28 @@
-local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Data = require(script.Data)
-Data.Init()
+local playerMod = require(script.Player)
+local ShopInfo = require(ReplicatedStorage.Shared.Shop)
 
-Players.PlayerAdded:Connect(function(player)
-	while player.Parent == Players do
-		task.wait(0.01)
-		Data.GetReplica(player):andThen(function(replica)
-			replica:Set({ "Money" }, replica.Data.Money + 2_000_000_000)
-			player.leaderstats.Money.Value = replica.Data.Money
-		end)
+Data.Init()
+playerMod.Init()
+
+ReplicatedStorage.Events.BuyMachine.OnServerEvent:Connect(function(player, machineNumber: number)
+	local MachineInfo = ShopInfo[machineNumber]
+	if not MachineInfo then
+		return
 	end
+	Data.GetReplica(player):andThen(function(replica)
+		if replica.Data.Money < MachineInfo.Price then
+			return
+		end -- cannot afford so just dont do anything else
+
+		replica:Set({ "Money" }, replica.Data.Money - MachineInfo.Price)
+		player.leaderstats.Money.Value = replica.Data.Money
+		if not replica.Data.Inventory[MachineInfo.Name] then
+			replica.Data.Inventory[MachineInfo.Name] = 1
+		else
+			replica.Data.Inventory[MachineInfo.Name] += 1
+		end
+		replica:Set({ "Inventory" }, replica.Data.Inventory)
+	end)
 end)

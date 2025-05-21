@@ -7,8 +7,8 @@ local Replicas = {}
 
 local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
 local Template = {
-	Money = 0,
-	Inventory = { 1, 2, 3, 4, 5, 6, 7, 8, 9 },
+	Money = 1_000,
+	Inventory = {},
 }
 
 local PlayerStore = ProfileStore.New("1", Template)
@@ -56,6 +56,13 @@ local function PlayerAdded(player: Player)
 			Money.Name = "Money"
 			Money.Parent = leaderstats
 			Money.Value = profile.Data.Money
+
+			for i, v in profile.Data.Inventory do
+				local newInstanceValue = Instance.new("NumberValue")
+				newInstanceValue.Parent = player
+				newInstanceValue.Name = i
+				newInstanceValue.Value = v
+			end
 		else
 			profile:EndSession()
 		end
