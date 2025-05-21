@@ -17,7 +17,7 @@ return {
 			Cooldown = 3.5,
 			BaseValue = 5,
 		},
-		CameraCFrame = CFrame.new(35, 4.5, -22),
+		CameraCFrame = CFrame.new(35, 4.5, -12),
 	},
 	[3] = {
 		Name = "Testing Machine",

@@ -6,6 +6,8 @@ local Replica = require(ReplicatedStorage.Packages.Replica)
 local player = Players.LocalPlayer
 local playergui = player.PlayerGui
 local HUD = playergui:WaitForChild("HUD")
+local InventoryGUI = playergui:WaitForChild("Inventory")
+
 local MoneyLabel = HUD:WaitForChild("MoneyAmount")
 
 local Format = require(ReplicatedStorage.Packages.FormatNumber)
@@ -25,23 +27,42 @@ local function AnimateText(old_value: number, new_value: number)
 	-- MoneyLabel.Text = `${Format.Simple.Format(math.round(currentNum))}`
 end
 
+local function UpdateInventory(newTable)
+	for i, v in newTable do
+		local newInstanceValue = player:FindFirstChild(i)
+		if not newInstanceValue then
+			newInstanceValue = Instance.new("NumberValue")
+		end
+		newInstanceValue.Parent = player
+		newInstanceValue.Name = i
+		newInstanceValue.Value = v
+		local temp = InventoryGUI.ScrollingFrame:FindFirstChild(i)
+		if not temp then
+			temp = InventoryGUI.Template:Clone()
+			temp.Parent = InventoryGUI.ScrollingFrame
+			temp.Name = i
+		end
+		temp.amount.Text = `{v}X`
+		temp.machineName.Text = i
+		temp.Visible = true
+
+		newInstanceValue.Changed:Connect(function(property)
+			if newInstanceValue.Value <= 0 then
+				temp:Destroy()
+			end
+		end)
+	end
+end
+
 function ClientData.Init()
 	Replica.OnNew("PlayerData", function(replica)
 		MoneyLabel.Text = `${Format.Simple.Format(replica.Data.Money)}`
-
+		task.spawn(UpdateInventory, replica.Data.Inventory)
 		replica:OnSet({ "Money" }, function(new_value, old_value)
 			task.spawn(AnimateText, old_value, new_value)
 		end)
-		replica:OnSet({ "Inventory" }, function(new_value, old_value)
-			for i, v in new_value do
-				local newInstanceValue = player:FindFirstChild(i)
-				if not newInstanceValue then
-					newInstanceValue = Instance.new("NumberValue")
-				end
-				newInstanceValue.Parent = player
-				newInstanceValue.Name = i
-				newInstanceValue.Value = v
-			end
+		replica:OnSet({ "Inventory" }, function(new_value)
+			task.spawn(UpdateInventory, new_value)
 		end)
 	end)
 end

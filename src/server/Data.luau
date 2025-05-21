@@ -8,7 +8,11 @@ local Replicas = {}
 local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
 local Template = {
 	Money = 1_000,
-	Inventory = {},
+	Inventory = {
+		["Simple Machine"] = 1,
+		["Advanced Machine"] = 1,
+	},
+	Plots = {}, -- "1st" plot is taken by "Advanced Machine"
 }
 
 local PlayerStore = ProfileStore.New("1", Template)
@@ -56,7 +60,11 @@ local function PlayerAdded(player: Player)
 			Money.Name = "Money"
 			Money.Parent = leaderstats
 			Money.Value = profile.Data.Money
-
+			task.spawn(function()
+				task.wait(5)
+				player_replica:Set({ "Money" }, profile.Data.Money + 1_000)
+				Money.Value = player_replica.Data.Money
+			end)
 			for i, v in profile.Data.Inventory do
 				local newInstanceValue = Instance.new("NumberValue")
 				newInstanceValue.Parent = player

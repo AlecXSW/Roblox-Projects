@@ -8,6 +8,7 @@ realm = "shared"
 Replica = "aykut92/replica@0.1.7"
 Promise = "evaera/promise@4.0.0"
 FormatNumber = "kumarion/formatnumber@0.0.1"
+goodsignal = "stravant/goodsignal@0.3.0"
 
 [server-dependencies]
 ProfileStore = "lm-loleris/profilestore@1.0.3"

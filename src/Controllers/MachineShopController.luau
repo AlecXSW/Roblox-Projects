@@ -2,18 +2,23 @@ local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
-local Shop = {}
+local MachineShop = {}
 
 local player = Players.LocalPlayer
 local playergui = player.PlayerGui
+local InventoryGUI = playergui:WaitForChild("Inventory")
+local HUD = playergui:WaitForChild("HUD")
 local ShopGUI = playergui:WaitForChild("Shop")
 
 local camera = workspace.CurrentCamera
 local currentMachine = 1
 local TotalMachines = #ReplicatedStorage.Machines:GetChildren()
 
+-- Hud Button
+local OpenShop = HUD.Buttons:WaitForChild("MachineShop")
+
 -- Get Shop Info
-local ShopInfo = require(ReplicatedStorage.Shared.Shop)
+local ShopInfo = require(ReplicatedStorage.Shared.MachineShop)
 
 -- Shop Buttons
 local CloseShop = ShopGUI:WaitForChild("CloseShopButton")
@@ -32,6 +37,7 @@ local OwnedLabel = ShopGUI:WaitForChild("AmountOwned")
 CloseShop.TextButton.Activated:Connect(function()
 	camera.CameraType = Enum.CameraType.Custom
 	ShopGUI.Enabled = false
+	HUD.Buttons:WaitForChild("Shop").Visible = true
 end)
 
 -- purchase item(can be machine or upgrader)
@@ -83,7 +89,27 @@ Previous.TextButton.Activated:Connect(function()
 	Activated(2)
 end)
 
-function Shop.Init()
+local function ToggleGUI()
+	InventoryGUI.Enabled = false
+	camera.CameraType = Enum.CameraType.Scriptable
+	local currentInfo = ShopInfo[currentMachine]
+	camera.CFrame = currentInfo.CameraCFrame * CFrame.Angles(0, math.rad(-90), 0)
+
+	MachineNameLabel.Text = currentInfo.Name
+	PriceOfMachine.Text = `${currentInfo.Price}`
+	DescriptionOfMachine.Text = currentInfo.Description
+	MachineCooldown.Text = `{currentInfo.Stats.Cooldown}s Cooldown`
+	MoneyPerDrop.Text = `${currentInfo.Stats.BaseValue}/drop`
+	if player:FindFirstChild(currentInfo.Name) then
+		OwnedLabel.Text = `Owned: {player:FindFirstChild(currentInfo.Name).Value}`
+	else
+		OwnedLabel.Text = `Owned: 0`
+	end
+
+	ShopGUI.Enabled = true
+end
+
+function MachineShop.Init()
 	player.ChildAdded:Connect(function(child)
 		if child.Name == ShopInfo[currentMachine].Name then
 			OwnedLabel.Text = `Owned: {child.Value}`
@@ -92,26 +118,12 @@ function Shop.Init()
 			end)
 		end
 	end)
+
+	OpenShop.Activated:Connect(ToggleGUI)
+
 	for _, prompt in CollectionService:GetTagged("SwitchMachine") do
-		prompt.Triggered:Connect(function()
-			camera.CameraType = Enum.CameraType.Scriptable
-			local currentInfo = ShopInfo[currentMachine]
-			camera.CFrame = currentInfo.CameraCFrame * CFrame.Angles(0, math.rad(-90), 0)
-
-			MachineNameLabel.Text = currentInfo.Name
-			PriceOfMachine.Text = `${currentInfo.Price}`
-			DescriptionOfMachine.Text = currentInfo.Description
-			MachineCooldown.Text = `{currentInfo.Stats.Cooldown}s Cooldown`
-			MoneyPerDrop.Text = `${currentInfo.Stats.BaseValue}/drop`
-			if player:FindFirstChild(currentInfo.Name) then
-				OwnedLabel.Text = `Owned: {player:FindFirstChild(currentInfo.Name).Value}`
-			else
-				OwnedLabel.Text = `Owned: 0`
-			end
-
-			ShopGUI.Enabled = true
-		end)
+		prompt.Triggered:Connect(ToggleGUI)
 	end
 end
 
-return Shop
+return MachineShop
