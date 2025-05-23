@@ -33,6 +33,7 @@ local function UpdateInventory(newTable)
 		if not newInstanceValue then
 			newInstanceValue = Instance.new("NumberValue")
 		end
+		newInstanceValue:AddTag("NewInstanceValue")
 		newInstanceValue.Parent = player
 		newInstanceValue.Name = i
 		newInstanceValue.Value = v
@@ -42,12 +43,23 @@ local function UpdateInventory(newTable)
 			temp.Parent = InventoryGUI.ScrollingFrame
 			temp.Name = i
 		end
+		if newInstanceValue.Value == 0 then
+			temp:Destroy()
+		end
+		local imageButton = temp:WaitForChild("ImageButton")
+		if imageButton then
+			imageButton.Activated:Connect(function()
+				player:SetAttribute("Index", i)
+				ReplicatedStorage.Events.PlaceMachine:FireServer(player:GetAttributes())
+			end)
+		end
 		temp.amount.Text = `{v}X`
 		temp.machineName.Text = i
 		temp.Visible = true
 
-		newInstanceValue.Changed:Connect(function(property)
-			if newInstanceValue.Value <= 0 then
+		newInstanceValue.Changed:Connect(function()
+			if newInstanceValue.Value == 0 then
+				newInstanceValue:Destroy()
 				temp:Destroy()
 			end
 		end)

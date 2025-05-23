@@ -9,10 +9,11 @@ local ProfileStore = require(ServerScriptService.ServerPackages.ProfileStore)
 local Template = {
 	Money = 1_000,
 	Inventory = {
-		["Simple Machine"] = 1,
+		["Simple Machine"] = 2,
 		["Advanced Machine"] = 1,
 	},
 	Plots = {}, -- "1st" plot is taken by "Advanced Machine"
+	OwnedPads = { "OwnerDoor[1]" },
 }
 
 local PlayerStore = ProfileStore.New("1", Template)

@@ -1,6 +1,8 @@
 local Players = game:GetService("Players")
+local ProximityPromptService = game:GetService("ProximityPromptService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerStorage = game:GetService("ServerStorage")
+
 local Tycoon = {}
 Tycoon.__index = Tycoon
 
@@ -13,21 +15,16 @@ local ClaimedLocations = {}
 local Data = require(script.Parent.Data)
 local FormatNumber = require(ReplicatedStorage.Packages.FormatNumber)
 
-function Tycoon:UpdateBank()
-	local player = Players:GetPlayerByUserId(self.Owner)
-	local Bank = self.Starter.Bank
+-- Cooldowns
+local PadDebounce = {}
 
-	Data.GetReplica(player):andThen(function(replica)
-		Bank.SurfaceGui.TextLabel.Text = `${FormatNumber.Simple.Format(replica.Data.Money)}`
-		player.leaderstats.Money.Changed:Connect(function()
-			Bank.SurfaceGui.TextLabel.Text = `${FormatNumber.Simple.Format(replica.Data.Money)}`
-		end)
-		-- task.spawn(function()
-		-- 	while self.Model ~= nil do
-		-- 		task.wait(1)
-		-- 		Bank.SurfaceGui.TextLabel.Text = `${FormatNumber.Simple.Format(replica.Data.Money)}`
-		-- 	end
-		-- end)
+local function UpdateBank(tycoon, player_replica)
+	local player = Players:GetPlayerByUserId(tycoon.Owner)
+
+	local Bank = tycoon.Starter.Bank
+	Bank.SurfaceGui.TextLabel.Text = `${FormatNumber.Simple.Format(player_replica.Data.Money)}`
+	player.leaderstats.Money.Changed:Connect(function()
+		Bank.SurfaceGui.TextLabel.Text = `${FormatNumber.Simple.Format(player_replica.Data.Money)}`
 	end)
 end
 
@@ -47,66 +44,80 @@ function Tycoon.new(player: Player)
 	until not table.find(ClaimedLocations, newLocation)
 	table.insert(ClaimedLocations, newLocation)
 
+	-- Setup The Tycoon
 	self.Model:PivotTo(newLocation)
 	local StarterTycoon = self.Model.Starter
 	StarterTycoon.Parent = workspace.Tycoons
 	StarterTycoon:SetAttribute("Owner", self.Owner)
 	self.Starter = StarterTycoon
 	self.Location = ClaimedLocations[newLocation]
+	self.Builds = self.Model.Builds :: Folder
 
+	-- Teleport Player To Their Tycoon (Change to a spawn part)
 	local Character = player.Character or player.CharacterAdded:Wait()
 	Character:PivotTo(newLocation)
 	player.CharacterAdded:Connect(function(newCharacter)
 		newCharacter:PivotTo(newLocation)
 	end)
 
-	local Plots = self.Starter.Plots
-	local Tubes = self.Starter.Tubes
-
-	Data.GetReplica(player):andThen(function(replica)
-		for plotNum, value in replica.Data.Plots do
-			print(plotNum, value)
-			local plotPart = Plots[plotNum]
-			local tubeModel = Tubes[plotNum]
-			task.spawn(function()
-				for _, v in tubeModel:GetChildren() do
-					if v:IsA("MeshPart") then
-						v.Transparency = v:GetAttribute("OGTransparency")
+	-- Load Tycoon Data
+	Data.GetReplica(player):andThen(function(playerReplica)
+		-- Pads Setup
+		task.spawn(UpdateBank, self, playerReplica)
+		task.spawn(function()
+			for _, pad in self.Starter.Pads:GetChildren() do
+				pad.Button.Touched:Connect(function(otherpart)
+					local touchedPlayer = Players:GetPlayerFromCharacter(otherpart.Parent)
+					-- not a player
+					if not touchedPlayer then
+						return
 					end
-				end
-			end)
-			local clonedMachine = ReplicatedStorage.Machines:FindFirstChild(value):Clone()
-			clonedMachine.Parent = plotPart
-			clonedMachine:PivotTo(plotPart.CFrame)
-		end
-	end)
-	task.spawn(function()
-		for _, v in self.Starter.KillOthers:GetChildren() do
-			v.Touched:Connect(function(otherPart)
-				local otherPlayer = Players:GetPlayerFromCharacter(otherPart.Parent)
-				if otherPlayer == nil then
-					return
-				end
-				if otherPlayer.UserId == self.Owner then
-					return
-				end
-				local character = otherPlayer.Character or otherPlayer.CharacterAdded:Wait()
-				character.Humanoid.Health = 0
-			end)
-		end
+					-- not the owner
+					if touchedPlayer.UserId ~= self.Owner then
+						return
+					end
+					-- still in cooldown
+					if PadDebounce[touchedPlayer] then
+						return
+					end
+					-- cannot afford
+					if playerReplica.Data.Money < pad:GetAttribute("Price") then
+						return
+					end
+
+					playerReplica:Set({ "Money" }, playerReplica.Data.Money - pad:GetAttribute("Price"))
+					player.leaderstats.Money.Value = playerReplica.Data.Money
+
+					local Build = self.Builds:FindFirstChild(pad.Name)
+					Build.Parent = self.Starter.Built
+
+					playerReplica:TableInsert({ "OwnedPads" }, pad.Name)
+					-- print(playerReplica.Data.OwnedPads)
+					pad:Destroy()
+
+					PadDebounce[touchedPlayer] = true
+					task.wait(0.15)
+					PadDebounce[touchedPlayer] = nil
+				end)
+			end
+		end)
+		-- Load Owned Pads
+		task.spawn(function()
+			for _, ownedPad in playerReplica.Data.OwnedPads do
+				local padModel = self.Starter.Pads:FindFirstChild(ownedPad)
+				padModel:Destroy()
+				local build = self.Builds:FindFirstChild(ownedPad)
+				build.Parent = self.Starter.Built
+				print(`Loaded: {ownedPad}`)
+			end
+		end)
 	end)
 	return self
 end
 
-function Tycoon:AddToPlot(plot, item)
-	if plot:GetAttribute("DropperPlot") then
-	elseif plot:GetAttribute("UpgraderPlot") then
-	end
-end
-
 function Tycoon:Destroy()
 	self.Model:Destroy() -- destroy the players tycoon within serverstorage
-	self.Starter:Destroy() -- destroy the base
+	self.Starter:Destroy() -- destroy the model within workspace
 	table.remove(ClaimedLocations, self.Location)
 end
 
